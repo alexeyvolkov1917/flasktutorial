@@ -14,18 +14,19 @@ def index():
     ).fetchall()
     return render_template('blog/index.html', posts=posts)
 
-@bp.route('/create', methods=('GET','POST'))
+@bp.route('/create', methods=('GET', 'POST'))
 @login_required
 def create():
-    redir =  render_template(url_for('blog.create.html'))
-    post = g.user['id']
     sql = 'INSERT INTO post (title,body,author_id) VALUES (?, ?, ?)'
-    ifpost(sql, id, redir, post=post)
+    id = g.user['id']
+    render = render_template('blog/create.html')
+    return ifpost(sql, id, render)
+
 
 def get_post(id,check_author=True):
     post = get_db().execute(
         'SELECT p.id, title,body,created,author_id,username'
-        ' FROM post JOIN user u ON p.author_id = u.id'
+        ' FROM post p JOIN user u ON p.author_id = u.id'
         " WHERE p.id = ?",
         (id,)
     ).fetchone()
@@ -38,30 +39,30 @@ def get_post(id,check_author=True):
 
     return post
 
-def ifpost(sql, id, redir):
+def ifpost(sql, id, render):
     if request.method == 'POST':
         title = request.form['title']
         body = request.form['body']
 
         if not title:
             flash('Title is required.')
-            return redir
+            return render
         else:
             db = get_db()
             db.execute(sql, (title, body, id))
             db.commit()
-            redirect(url_for('blog.index'))
+            return redirect(url_for('blog.index'))
     else:
-        return redir
+        return render
 
 
-@bp.route('/<int:id>/update', methods=('GET','POST'))
+
+@bp.route('/<int:id>/update', methods=('GET', 'POST'))
 @login_required
 def update(id):
-    redir = redirect(url_for('blog/update.html'))
-    post = get_post(id)
     sql = 'UPDATE post SET title = ?, body = ? WHERE id = ?'
-    return ifpost(sql,id, redir, post=post)
+    render = render_template('blog/update.html', post=get_post(id))
+    return ifpost(sql,id,render)
 
 @bp.route('/<int:id>/delete', methods=('POST',))
 @login_required
