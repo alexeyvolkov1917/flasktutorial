@@ -19,8 +19,8 @@ def index():
 def create():
     sql = 'INSERT INTO post (title,body,author_id) VALUES (?, ?, ?)'
     id = g.user['id']
-    render = render_template('blog/create.html')
-    return ifpost(sql, id, render)
+    path = 'blog/create.html'
+    return ifpost(sql, id, path)
 
 
 def get_post(id,check_author=True):
@@ -39,21 +39,21 @@ def get_post(id,check_author=True):
 
     return post
 
-def ifpost(sql, id, render):
+def ifpost(sql, id, path ,post=None):
     if request.method == 'POST':
         title = request.form['title']
         body = request.form['body']
 
         if not title:
             flash('Title is required.')
-            return render
+            return render_template(path,post=post)
         else:
             db = get_db()
             db.execute(sql, (title, body, id))
             db.commit()
             return redirect(url_for('blog.index'))
     else:
-        return render
+        return render_template(path,post=post)
 
 
 
@@ -61,8 +61,8 @@ def ifpost(sql, id, render):
 @login_required
 def update(id):
     sql = 'UPDATE post SET title = ?, body = ? WHERE id = ?'
-    render = render_template('blog/update.html', post=get_post(id))
-    return ifpost(sql,id,render)
+    path = 'blog/update.html'
+    return ifpost(sql,id,path,get_post(id))
 
 @bp.route('/<int:id>/delete', methods=('POST',))
 @login_required
